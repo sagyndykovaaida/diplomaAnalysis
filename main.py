@@ -18,6 +18,7 @@ def main():
         plot_weekly_data(yearly_data, 'IBM Yearly Price Movements')
         time.sleep(900)
 
+# here for perioud
         weekly_df = fetch_daily_data('IBM', API_KEY)
         weekly_data = process_daily_data(weekly_df)
         plot_daily_data(weekly_data, 'IBM Weekly Price Movements')
