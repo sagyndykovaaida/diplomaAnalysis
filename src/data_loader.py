@@ -30,9 +30,7 @@ def fetch_daily_data(symbol, apikey):
     }
     return fetch_data(url, params)
 
-# Обратите внимание: последний API имеет параметр `month`, который не поддерживается Alpha Vantage напрямую.
-# Этот пример предполагает загрузку интрадневных данных за период, но вы должны реализовать логику
-# фильтрации данных за этот месяц вручную после загрузки.
+
 def fetch_intraday_for_period(symbol, interval, month, apikey):
     # Используется та же функция что и для интрадневных данных, но потребуется дополнительная обработка данных
     return fetch_intraday_data(symbol, interval, apikey)
