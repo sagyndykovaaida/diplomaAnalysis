@@ -1,79 +1,12 @@
-# from flask import Flask, request, jsonify
-# from flask_cors import CORS
-# import yfinance as yf
-# import pandas as pd
-# import json
-# from plotly.utils import PlotlyJSONEncoder
-# import plotly.express as px  # Лучше импортировать в начале файла
-#
-# app = Flask(__name__)
-# # Настройка CORS для всех маршрутов
-# CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST"]}})
-#
-# def load_data(ticker, start_date, end_date):
-#     data = yf.download(ticker, start=start_date, end=end_date)
-#     data.reset_index(inplace=True)
-#     return data
-#
-# # @app.route('/api/get_stock_data', methods=['GET'])
-# # def get_stock_data():
-# #     ticker = request.args.get('ticker', default='AAPL')
-# #     start_date = request.args.get('start', default='2022-01-01')
-# #     end_date = request.args.get('end', default=pd.to_datetime('today').strftime('%Y-%m-%d'))
-# #
-# #     data = load_data(ticker, start_date, end_date)
-# #     return jsonify(data.to_dict(orient='records'))
-#
-#
-# @app.route('/api/get_stock_data', methods=['GET'])
-# def get_stock_data():
-#     ticker = request.args.get('ticker', default='AAPL')
-#     start_date = request.args.get('start', default='2022-01-01')
-#     end_date = request.args.get('end', default=pd.to_datetime('today').strftime('%Y-%m-%d'))
-#     data = load_data(ticker, start_date, end_date)
-#     return jsonify(data.to_dict(orient='records'))
-#
-#
-#
-# @app.route('/api/get_stock_chart', methods=['GET'])
-# def get_stock_chart():
-#     ticker = request.args.get('ticker', default='AAPL')
-#     start_date = request.args.get('start', default='2022-01-01')
-#     end_date = request.args.get('end', default=pd.to_datetime('today').strftime('%Y-%m-%d'))
-#
-#     data = load_data(ticker, start_date, end_date)
-#     fig = px.line(data, x='Date', y='Close', title=f'Closing Price of {ticker}')
-#     graph_json = json.dumps(fig, cls=PlotlyJSONEncoder)
-#     return graph_json
-#
-# @app.route('/api/get_stock_statistics', methods=['GET'])
-# def get_stock_statistics():
-#     ticker = request.args.get('ticker', default='AAPL')
-#     start_date = request.args.get('start', default='2022-01-01')
-#     end_date = request.args.get('end', default=pd.to_datetime('today').strftime('%Y-%m-%d'))
-#
-#     data = load_data(ticker, start_date, end_date)
-#     stats = data.describe().to_dict()
-#     return jsonify(stats)
-#
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
-
-
-from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import yfinance as yf
-import pandas as pd
-import requests
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
-
+from fastapi import FastAPI, HTTPException, APIRouter
+from typing import List
 app = FastAPI()
-API_KEY = os.getenv('Z5PRD4266B2CCZJL', 'default_api_key_if_any')  # Use environment variable for API Key
+API_KEY = os.getenv('Z5PRD4266B2CCZJL', 'default_api_key_if_any')
 
-# url = f"https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={API_KEY}"
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -83,7 +16,6 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-# Your existing routes and logic here
 
 def get_stock_data(ticker, period):
     data = yf.download(ticker, period=period)
@@ -140,3 +72,28 @@ def get_data_for_year(request: TickerRequest):
         raise HTTPException(status_code=404, detail="No data found for the given ticker.")
     return data.to_dict(orient="records")
 
+
+
+timeframe_mapping = {
+    '1D': '1d',
+    '1W': '1wk',
+    '1M': '1mo',
+    '1Y': '1y'
+}
+
+api_router = APIRouter()
+
+@api_router.post("/data/{timeframe}/", response_model=List[dict])
+def get_data_for_timeframe(request: TickerRequest, timeframe: str):
+    if timeframe not in timeframe_mapping:
+        raise HTTPException(status_code=400, detail="Invalid timeframe specified.")
+    data = get_stock_data(request.ticker, timeframe_mapping[timeframe])
+    if data is None:
+        raise HTTPException(status_code=404, detail="No data found for the given ticker.")
+    return data.to_dict(orient="records")
+
+app.include_router(api_router)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
