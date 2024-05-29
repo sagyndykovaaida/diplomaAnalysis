@@ -10,12 +10,11 @@ API_KEY = os.getenv('Z5PRD4266B2CCZJL', 'default_api_key_if_any')
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],  # Specifies the allowed origin
+    allow_origins=["http://localhost:4200"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-
 
 def get_stock_data(ticker, period):
     data = yf.download(ticker, period=period)
@@ -29,8 +28,6 @@ class StockRequest(BaseModel):
     ticker: str
     start_date: str
     end_date: str
-
-
 
 @app.post("/load_data/")
 def load_data(request: StockRequest):
@@ -73,14 +70,12 @@ def get_data_for_year(request: TickerRequest):
     return data.to_dict(orient="records")
 
 
-
 timeframe_mapping = {
     '1D': '1d',
     '1W': '1wk',
     '1M': '1mo',
     '1Y': '1y'
 }
-
 api_router = APIRouter()
 
 @api_router.post("/data/{timeframe}/", response_model=List[dict])
